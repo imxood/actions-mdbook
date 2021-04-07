@@ -1,20 +1,12 @@
 name: "mdbook binary"
 description: "setup mdbook."
 author: "maxu"
-inputs:
-    mdbookVersion:
-        description: "The mdbook version to and use. Example: 0.4.7"
-        required: false
-        default: "latest"
 
 runs:
-    using: "node12"
-    main: "lib/index.js"
-
     using: "composite"
     steps:
-      - id: random-number-generator
-        run: echo "::set-output name=random-id::$(echo $RANDOM)"
+      - id: install mdbook binary
+        run: cargo run
         shell: bash
 
 branding:
