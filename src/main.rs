@@ -1,12 +1,64 @@
+use flate2::read::GzDecoder;
 use futures_util::StreamExt;
-use reqwest::{Error, Response};
+use indicatif::{ProgressBar, ProgressStyle};
+use octocrab::Octocrab;
+use reqwest::Error;
 use std::collections::HashMap;
-use std::env::{self, temp_dir};
+use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
+// use std::process::Command;
+use tar::Archive;
 
-use indicatif::{ProgressBar, ProgressStyle};
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+    let token = env::var("PAGES_GENERATE_TOKEN").unwrap();
+    let octocrab = octocrab::OctocrabBuilder::new()
+        .add_preview("pages-generator")
+        .personal_token(token)
+        .build()
+        .unwrap();
+
+    let target_dir = env::current_dir().unwrap();
+
+    // mdBook
+    let download_url = get_download_url(&octocrab, "rust-lang", "mdBook").await;
+    let filename = download_file(&octocrab, &download_url, &target_dir).await;
+    println!("filename: {}", &filename);
+    decompress_tar_gz(&filename);
+    let path = target_dir.clone();
+    env::join_paths(vec![&path]).unwrap();
+
+    // mdbook-katex
+    let download_url = get_download_url(&octocrab, "lzanini", "mdbook-katex").await;
+    let filename = download_file(&octocrab, &download_url, &target_dir).await;
+    println!("filename: {}", &filename);
+    decompress_tar_gz(&filename);
+    let path = target_dir
+        .clone()
+        .join("target/x86_64-unknown-linux-gnu/release");
+    env::join_paths(vec![&path]).unwrap();
+
+    // mdbook-mermaid
+    let download_url = get_download_url(&octocrab, "badboy", "mdbook-mermaid").await;
+    let filename = download_file(&octocrab, &download_url, &target_dir).await;
+    println!("filename: {}", &filename);
+    decompress_tar_gz(&filename);
+    let path = target_dir.clone();
+    env::join_paths(vec![&path]).unwrap();
+
+    for (key, value) in env::vars() {
+        println!("{}: {}", key, value);
+    }
+
+    // Command::new("mdbook")
+    //     .arg("build")
+    //     .output()
+    //     .expect("failed to execute process");
+
+    Ok(())
+}
 
 fn get_os() -> String {
     #[cfg(target_os = "macos")]
@@ -18,9 +70,16 @@ fn get_os() -> String {
     String::from(os)
 }
 
-async fn download_file(response: Response, target_dir: &PathBuf) -> String {
+async fn download_file(
+    octocrab: &Octocrab,
+    download_url: &reqwest::Url,
+    target_dir: &PathBuf,
+) -> String {
     let mut data_length = 0;
     let mut filename;
+
+    let builder = octocrab.request_builder(download_url.clone(), reqwest::Method::GET);
+    let response = octocrab.execute(builder).await.unwrap();
 
     let mut file = {
         data_length = response.content_length().unwrap();
@@ -57,20 +116,10 @@ async fn download_file(response: Response, target_dir: &PathBuf) -> String {
     filename
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
-    let token = env::var("PAGES_GENERATE_TOKEN").unwrap();
-    let octocrab = octocrab::OctocrabBuilder::new()
-        .add_preview("pages-generator")
-        .personal_token(token)
-        .build()
-        .unwrap();
-
-    // mdbook-katex
-    let repo_handler = octocrab.repos("lzanini", "mdbook-katex");
+async fn get_download_url(octocrab: &Octocrab, owner: &str, repo: &str) -> reqwest::Url {
+    let repo_handler = octocrab.repos(owner, repo);
     let releases_handler = repo_handler.releases();
     let release = releases_handler.get_latest().await.unwrap();
-    println!("{:#?}", release);
 
     let asset = release
         .assets
@@ -84,18 +133,12 @@ async fn main() -> Result<(), Error> {
         })
         .unwrap();
 
-    println!("asset.browser_download_url: {}", asset.browser_download_url);
+    asset.browser_download_url.clone()
+}
 
-    // download file
-    let builder =
-        octocrab.request_builder(asset.browser_download_url.clone(), reqwest::Method::GET);
-    let response = octocrab.execute(builder).await.unwrap();
-
-    let target_dir = env::current_dir().unwrap();
-
-    let filename = download_file(response, &target_dir).await;
-
-    println!("filename: {}", &filename);
-
-    Ok(())
+fn decompress_tar_gz(tar_gz_file: &String) {
+    let tar_gz = File::open(tar_gz_file).unwrap();
+    let tar = GzDecoder::new(tar_gz);
+    let mut archive = Archive::new(tar);
+    archive.unpack(".").unwrap();
 }
