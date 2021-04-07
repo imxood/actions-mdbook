@@ -6,7 +6,9 @@ runs:
     using: "composite"
     steps:
       - id: install-mdbook-binary
-        run: cargo run
+        run: |
+            echo "GITHUB_ACTION_PATH: $GITHUB_ACTION_PATH"
+            cargo run
         shell: bash
 
 branding:
