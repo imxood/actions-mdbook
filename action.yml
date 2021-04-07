@@ -7,8 +7,7 @@ runs:
     steps:
       - id: install-mdbook-binary
         run: |
-            echo "GITHUB_ACTION_PATH: $GITHUB_ACTION_PATH"
-            tree && tree ..
+            cd $GITHUB_ACTION_PATH
             cargo run
         shell: bash
 
