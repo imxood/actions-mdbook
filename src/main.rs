@@ -13,7 +13,7 @@ use tar::Archive;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let token = env::var("PAGES_GENERATE_TOKEN").unwrap();
+    let token = env::var("GITHUB_TOKEN").unwrap();
     let octocrab = octocrab::OctocrabBuilder::new()
         .add_preview("pages-generator")
         .personal_token(token)
