@@ -9,13 +9,8 @@ edition = "2018"
 [dependencies]
 tokio = {version="1.2.0", features=["full"]}
 octocrab = "0.8.11"
-snap = "1.0.4"
 reqwest = {version="0.11.1", features=["stream", "json"]}
 futures-util = "0.3.13"
 indicatif = "0.15.0"
 flate2 = { version = "1.0.17", features = ["zlib-ng-compat"], default-features = false }
 tar = "0.4"
-
-# clap = "2.33.3"
-# serde = {version="1.0.124", features = ["derive"]}
-# url = "2.2.1"
