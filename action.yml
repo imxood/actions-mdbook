@@ -5,7 +5,7 @@ author: "maxu"
 runs:
     using: "composite"
     steps:
-      - id: install mdbook binary
+      - id: install-mdbook-binary
         run: cargo run
         shell: bash
 
