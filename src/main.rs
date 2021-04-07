@@ -25,6 +25,7 @@ async fn main() -> Result<(), Error> {
 
     let env_file = env::var("GITHUB_PATH").unwrap();
     let mut env_output = OpenOptions::new().append(true).open(env_file).unwrap();
+    let data = b"\n";
 
     // mdBook
     let download_url = get_download_url(&octocrab, "rust-lang", "mdBook").await;
@@ -33,6 +34,7 @@ async fn main() -> Result<(), Error> {
     decompress_tar_gz(&filename);
     let path = target_dir.clone();
     env_output.write(path.to_str().unwrap().as_bytes()).unwrap();
+    env_output.write(data).unwrap();
 
     // mdbook-katex
     let download_url = get_download_url(&octocrab, "lzanini", "mdbook-katex").await;
@@ -43,6 +45,7 @@ async fn main() -> Result<(), Error> {
         .clone()
         .join("target/x86_64-unknown-linux-gnu/release");
     env_output.write(path.to_str().unwrap().as_bytes()).unwrap();
+    env_output.write(data).unwrap();
 
     // mdbook-mermaid
     let download_url = get_download_url(&octocrab, "badboy", "mdbook-mermaid").await;
@@ -51,6 +54,7 @@ async fn main() -> Result<(), Error> {
     decompress_tar_gz(&filename);
     let path = target_dir.clone();
     env_output.write(path.to_str().unwrap().as_bytes()).unwrap();
+    env_output.write(data).unwrap();
 
     // Command::new("mdbook")
     //     .arg("build")
