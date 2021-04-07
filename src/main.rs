@@ -6,6 +6,7 @@ use reqwest::Error;
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::PathBuf;
 // use std::process::Command;
@@ -22,13 +23,16 @@ async fn main() -> Result<(), Error> {
 
     let target_dir = env::current_dir().unwrap();
 
+    let env_file = env::var("GITHUB_PATH").unwrap();
+    let mut env_output = OpenOptions::new().append(true).open(env_file).unwrap();
+
     // mdBook
     let download_url = get_download_url(&octocrab, "rust-lang", "mdBook").await;
     let filename = download_file(&octocrab, &download_url, &target_dir).await;
     println!("filename: {}", &filename);
     decompress_tar_gz(&filename);
     let path = target_dir.clone();
-    env::join_paths(vec![&path]).unwrap();
+    env_output.write(path.to_str().unwrap().as_bytes()).unwrap();
 
     // mdbook-katex
     let download_url = get_download_url(&octocrab, "lzanini", "mdbook-katex").await;
@@ -38,7 +42,7 @@ async fn main() -> Result<(), Error> {
     let path = target_dir
         .clone()
         .join("target/x86_64-unknown-linux-gnu/release");
-    env::join_paths(vec![&path]).unwrap();
+    env_output.write(path.to_str().unwrap().as_bytes()).unwrap();
 
     // mdbook-mermaid
     let download_url = get_download_url(&octocrab, "badboy", "mdbook-mermaid").await;
@@ -46,11 +50,7 @@ async fn main() -> Result<(), Error> {
     println!("filename: {}", &filename);
     decompress_tar_gz(&filename);
     let path = target_dir.clone();
-    env::join_paths(vec![&path]).unwrap();
-
-    for (key, value) in env::vars() {
-        println!("{}: {}", key, value);
-    }
+    env_output.write(path.to_str().unwrap().as_bytes()).unwrap();
 
     // Command::new("mdbook")
     //     .arg("build")
